@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AntennaMath</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:#0d1117; color:#e6edf3; }
+  .wrap { max-width:720px; margin:0 auto; padding:36px 20px 60px; }
+  h1 { font-size:1.9rem; margin:0; }
+  .tag { color:#9da7b3; margin:6px 0 18px; }
+  .presets { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px; }
+  .presets button { background:#21262d; color:#c9d1d9; border:1px solid #30363d; border-radius:999px; padding:8px 16px; font-size:0.9rem; cursor:pointer; }
+  .presets button:hover { border-color:#3fb950; color:#3fb950; }
+  section { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:20px; margin-bottom:18px; }
+  h2 { font-size:1rem; margin:0 0 14px; color:#e6edf3; }
+  .row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
+  label { display:block; font-size:0.78rem; color:#9da7b3; margin-bottom:4px; }
+  input, select { background:#0d1117; border:1px solid #30363d; color:#e6edf3; border-radius:6px; padding:8px 10px; font-size:0.95rem; width:130px; }
+  .outs { display:flex; flex-wrap:wrap; gap:12px; }
+  .out { flex:1 1 150px; background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:12px 14px; }
+  .out .val { font-size:1.15rem; font-weight:700; color:#58a6ff; }
+  .out .lab { font-size:0.75rem; color:#9da7b3; margin-top:4px; }
+  .verdict { border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:0.9rem; }
+  .v-good { background:#0d2817; border:1px solid #238636; color:#7ee2a0; }
+  .v-warn { background:#2d2306; border:1px solid #9e6a03; color:#f0c659; }
+  .v-bad { background:#3d1214; border:1px solid #da3633; color:#ff9492; }
+  table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+  th { text-align:left; color:#9da7b3; font-weight:600; font-size:0.78rem; padding:6px 8px; }
+  td { padding:8px; border-top:1px solid #21262d; }
+  tr.cur td { background:#1f6feb22; }
+  .foot { color:#6e7681; font-size:0.8rem; margin-top:10px; }
+  a { color:#58a6ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>&#128225; AntennaMath</h1>
+  <p class="tag">Ham antenna math - cut the dipole long and trim by SWR, and count the watts the coax keeps for itself.</p>
+  <div class="presets">
+    <button data-p="hf">40m dipole, 100W</button>
+    <button data-p="vhf">2m base, thin coax</button>
+    <button data-p="vhf2">2m base, LMR-400</button>
+    <button data-p="field">Field day 20m</button>
+  </div>
+
+  <section>
+    <h2>1. Frequency and lengths</h2>
+    <div class="row">
+      <div><label>Frequency (MHz)</label><input id="freq" type="number" step="0.01" min="0.1" value="7.15"></div>
+    </div>
+    <div class="outs">
+      <div class="out"><div class="val" id="o-wl"></div><div class="lab">Wavelength</div></div>
+      <div class="out"><div class="val" id="o-dipole"></div><div class="lab">Dipole total (468/f)</div></div>
+      <div class="out"><div class="val" id="o-leg"></div><div class="lab">Each leg</div></div>
+      <div class="out"><div class="val" id="o-vert"></div><div class="lab">Quarter-wave vertical</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. SWR from the wattmeter</h2>
+    <div class="row">
+      <div><label>Forward (W)</label><input id="fwd" type="number" step="1" min="0" value="100"></div>
+      <div><label>Reflected (W)</label><input id="refl" type="number" step="1" min="0" value="4"></div>
+    </div>
+    <div class="outs">
+      <div class="out"><div class="val" id="o-swr"></div><div class="lab">SWR</div></div>
+      <div class="out"><div class="val" id="o-mm"></div><div class="lab">Power bounced back</div></div>
+    </div>
+    <div id="v-swr"></div>
+  </section>
+
+  <section>
+    <h2>3. Coax truth</h2>
+    <div class="row">
+      <div><label>Transmitter (W)</label><input id="tx" type="number" step="5" min="1" value="100"></div>
+      <div><label>Coax type</label>
+        <select id="coax"><option value="RG-58">RG-58</option><option value="RG-8X">RG-8X</option><option value="RG-213" selected>RG-213</option><option value="LMR-400">LMR-400</option></select></div>
+      <div><label>Run (ft)</label><input id="clen" type="number" step="5" min="1" value="50"></div>
+    </div>
+    <div class="outs">
+      <div class="out"><div class="val" id="o-loss"></div><div class="lab">Coax loss</div></div>
+      <div class="out"><div class="val" id="o-del"></div><div class="lab">Watts at the antenna</div></div>
+      <div class="out"><div class="val" id="o-erp"></div><div class="lab">ERP (dipole gain)</div></div>
+    </div>
+    <div id="v-coax" style="margin-top:12px"></div>
+    <table style="margin-top:14px">
+      <thead><tr><th>Coax</th><th>Loss</th><th>Delivered</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </section>
+
+  <p class="foot">468/f for bare-wire dipoles (end effect baked in), 234/f for quarter-wave verticals. SWR = (1+g)/(1-g), g = sqrt(Pr/Pf). Coax figures are catalog dB/100ft at the nearest band. <a href="https://github.com/iLanis-agent/antennamath">Source</a></p>
+</div>
+<script src="engine.js"></script>
+<script>
+var F = ['freq','fwd','refl','tx','coax','clen'];
+var PRESETS = {
+  hf:    { freq:7.15, fwd:100, refl:4,  tx:100, coax:'RG-213',  clen:50 },
+  vhf:   { freq:146,  fwd:50,  refl:12, tx:50,  coax:'RG-58',   clen:75 },
+  vhf2:  { freq:146,  fwd:50,  refl:12, tx:50,  coax:'LMR-400', clen:75 },
+  field: { freq:14.2, fwd:100, refl:9,  tx:100, coax:'RG-8X',   clen:35 }
+};
+function el(id) { return document.getElementById(id); }
+function update() {
+  var r = AntennaMath.compute({
+    fMHz: +el('freq').value, fwdW: el('fwd').value, reflW: el('refl').value,
+    txW: el('tx').value, lenFt: el('clen').value, coax: el('coax').value
+  });
+  if (r.error) { el('o-wl').textContent = r.error; return; }
+  el('o-wl').textContent = r.wavelengthM + ' m';
+  el('o-dipole').textContent = r.dipoleFt + ' ft';
+  el('o-leg').textContent = r.dipoleLegFt + ' ft';
+  el('o-vert').textContent = r.verticalFt + ' ft';
+  el('o-swr').textContent = r.swr == null ? '-' : r.swr + ':1';
+  el('o-mm').textContent = r.mismatchPct == null ? '-' : r.mismatchPct + '%';
+  el('v-swr').innerHTML = r.swrCheck ? '<div class="verdict v-' + r.swrCheck.level + '" style="margin-top:12px">' + r.swrCheck.text + '</div>' : '';
+  el('o-loss').textContent = r.lossDb + ' dB';
+  el('o-del').textContent = r.deliveredW + ' W';
+  el('o-erp').textContent = r.erpW + ' W';
+  el('v-coax').innerHTML = r.coaxCheck ? '<div class="verdict v-' + r.coaxCheck.level + '">' + r.coaxCheck.text + '</div>' : '';
+  el('tbody').innerHTML = (r.alternatives || []).map(function (a) {
+    return '<tr class="' + (a.type === el('coax').value ? 'cur' : '') + '"><td>' + a.type + '</td><td>' + a.lossDb + ' dB</td><td>' + a.deliveredW + ' W</td></tr>';
+  }).join('');
+}
+F.forEach(function (id) {
+  el(id).addEventListener('input', update);
+  el(id).addEventListener('change', update);
+});
+document.querySelectorAll('.presets button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var p = PRESETS[b.getAttribute('data-p')];
+    el('freq').value = p.freq; el('fwd').value = p.fwd; el('refl').value = p.refl;
+    el('tx').value = p.tx; el('coax').value = p.coax; el('clen').value = p.clen;
+    update();
+  });
+});
+update();
+</script>
+</body>
+</html>
